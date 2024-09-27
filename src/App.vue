@@ -208,7 +208,7 @@ function handleUpdatePosition(evt: MouseEvent) {
     </p>
     <p>
       Font size:
-      <input type="text" :value="fontSize" @input="fontSize = $event.currentTarget.value">
+      <input type="text" :value="fontSize" @input="fontSize = ($event.currentTarget as any).value">
     </p>
     <p>
       Color:

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
+    "deploy": "npm run build && gh-pages dist",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -13,7 +14,9 @@
     "vue": "^3.4.37"
   },
   "devDependencies": {
+    "@types/lodash": "^4.17.9",
     "@vitejs/plugin-vue": "^5.1.2",
+    "gh-pages": "^6.1.1",
     "typescript": "^5.5.3",
     "vite": "^5.4.1",
     "vue-tsc": "^2.0.29"
