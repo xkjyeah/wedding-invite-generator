@@ -30,6 +30,8 @@ function loadObjectParam(url: URL, key: string): any {
 const name = ref<string>(loadStringParam(currentUrl, 'name') || "Tan Ah Kow")
 const fontLoadingCode = ref<string>(loadStringParam(currentUrl, 'fontLoadingCode') || "")
 const fontFamily = ref<string>(loadStringParam(currentUrl, 'fontFamily') || "sans-serif")
+const isItalic = ref<string>(loadStringParam(currentUrl, 'isItalic') || "")
+const isBold = ref<string>(loadStringParam(currentUrl, 'isBold') || "")
 const fontColor = ref<string>(loadStringParam(currentUrl, 'fontColor') || "#000000")
 const fontSize = ref<string>(loadStringParam(currentUrl, 'fontSize') || '14')
 const coordinates = ref<[number, number]>(loadObjectParam(currentUrl, 'coordinates') || [0.5, 0.5])
@@ -90,7 +92,10 @@ const generateInvitationCard = debounce(async function (): Promise<void> {
   const lx = imageSize.value.width * coordinates.value[0]
   const ly = imageSize.value.height * coordinates.value[1]
 
-  context.font = `${parseFloat(fontSize.value) || '14'}px "${fontFamily.value}"`
+  const effectiveSize = (parseFloat(fontSize.value) || 14) / 600 * imageSize.value.height
+
+  context.font = `${isItalic.value ? 'italic' : ''} ${isBold.value ? 'bold' : ''} ${effectiveSize}px "${fontFamily.value}"`
+
   context.textAlign = 'center'
   context.fillStyle = fontColor.value
   context.fillText(name.value, lx, ly)
@@ -103,6 +108,8 @@ const saveSettings = debounce(function () {
   const currentUrl = new URL(window.location.href)
   const settingsToSave = {
     fontFamily: fontFamily.value,
+    isBold: isBold.value,
+    isItalic: isItalic.value,
     fontLoadingCode: fontLoadingCode.value,
     fontSize: fontSize.value,
     fontColor: fontColor.value,
@@ -121,7 +128,7 @@ const saveSettings = debounce(function () {
   window.history.replaceState(null, '', currentUrl.toString())
 }, 1000)
 
-watch([fontFamily, fontSize, fontColor, name, rawImageDataURL, coordinates], () => {
+watch([fontFamily, isBold, isItalic, fontSize, fontColor, name, rawImageDataURL, coordinates], () => {
   generateInvitationCard()
   saveSettings()
 })
@@ -200,11 +207,22 @@ function handleUpdatePosition(evt: MouseEvent) {
         placeholder="Paste the '<link rel=...' code from Google Fonts here"></textarea>
       <Error :message="errors.fontLoadingCode" />
     </p>
-    <p> Font face:
+    <p>
+      Font face:
       <select @input="fontFamily = ($event.target as any).value">
         <option></option>
         <option v-for="ff in availableFontFaces" :value="ff" :selected="ff == fontFamily">{{ ff }}</option>
       </select>
+
+      <label>
+        <input type="checkbox" :checked="!!isBold" @input="isBold = ($event.target as any).checked ? '1' : ''" />
+        Bold
+      </label>
+
+      <label>
+        <input type="checkbox" :checked="!!isItalic" @input="isItalic = ($event.target as any).checked ? '1' : ''" />
+        Italic
+      </label>
     </p>
     <p>
       Font size:
@@ -234,7 +252,7 @@ function handleUpdatePosition(evt: MouseEvent) {
   margin: auto;
 }
 
-input,
+input[type="text"],
 textarea {
   display: block;
   width: 100%;
