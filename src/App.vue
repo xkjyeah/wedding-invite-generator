@@ -32,6 +32,7 @@ const fontLoadingCode = ref<string>(loadStringParam(currentUrl, 'fontLoadingCode
 const fontFamily = ref<string>(loadStringParam(currentUrl, 'fontFamily') || "sans-serif")
 const isItalic = ref<string>(loadStringParam(currentUrl, 'isItalic') || "")
 const isBold = ref<string>(loadStringParam(currentUrl, 'isBold') || "")
+const isVertical = ref<string>(loadStringParam(currentUrl, 'isVertical') || "")
 const fontColor = ref<string>(loadStringParam(currentUrl, 'fontColor') || "#000000")
 const fontSize = ref<string>(loadStringParam(currentUrl, 'fontSize') || '14')
 const coordinates = ref<[number, number]>(loadObjectParam(currentUrl, 'coordinates') || [0.5, 0.5])
@@ -89,16 +90,30 @@ const generateInvitationCard = debounce(async function (): Promise<void> {
 
   context.drawImage(imageEle, 0, 0)
 
-  const lx = imageSize.value.width * coordinates.value[0]
-  const ly = imageSize.value.height * coordinates.value[1]
+  const iw = imageSize.value.width
+  const ih = imageSize.value.height
+  const lx = iw * coordinates.value[0]
+  const ly = ih * coordinates.value[1]
 
   const effectiveSize = (parseFloat(fontSize.value) || 14) / 600 * imageSize.value.height
 
+  if (isVertical.value) {
+    context.rotate(+Math.PI / 2)
+  }
   context.font = `${isItalic.value ? 'italic' : ''} ${isBold.value ? 'bold' : ''} ${effectiveSize}px "${fontFamily.value}"`
-
   context.textAlign = 'center'
   context.fillStyle = fontColor.value
-  context.fillText(name.value, lx, ly)
+
+
+  if (isVertical.value) {
+    context.fillText(name.value, ly, -lx)
+  } else {
+    context.fillText(name.value, lx, ly)
+  }
+
+  if (isVertical.value) {
+    context.rotate(-Math.PI / 2)
+  }
 
   // Update the URL!
   imageDataURL.value = canvasElement.toDataURL()
@@ -109,6 +124,7 @@ const saveSettings = debounce(function () {
   const settingsToSave = {
     fontFamily: fontFamily.value,
     isBold: isBold.value,
+    isVertical: isVertical.value,
     isItalic: isItalic.value,
     fontLoadingCode: fontLoadingCode.value,
     fontSize: fontSize.value,
@@ -128,7 +144,7 @@ const saveSettings = debounce(function () {
   window.history.replaceState(null, '', currentUrl.toString())
 }, 1000)
 
-watch([fontFamily, isBold, isItalic, fontSize, fontColor, name, rawImageDataURL, coordinates], () => {
+watch([fontFamily, isBold, isItalic, isVertical, fontSize, fontColor, name, rawImageDataURL, coordinates], () => {
   generateInvitationCard()
   saveSettings()
 })
@@ -195,7 +211,10 @@ function handleUpdatePosition(evt: MouseEvent) {
 
 <template>
   <div class="root">
-    <canvas ref="canvasInput" style="display: none" :width="imageSize.width" :height="imageSize.height" />
+    <canvas ref="canvasInput" :width="imageSize.width" :height="imageSize.height" :style="{
+      ...(isVertical ? { 'text-orientation': 'mixed', 'writing-mode': 'vertical-rl' } : {}),
+      display: 'none'
+    }" />
     <p>
       Image file:
       <input type="file" ref="fileInput" @change="updatePreview" />
@@ -222,6 +241,12 @@ function handleUpdatePosition(evt: MouseEvent) {
       <label>
         <input type="checkbox" :checked="!!isItalic" @input="isItalic = ($event.target as any).checked ? '1' : ''" />
         Italic
+      </label>
+
+      <label>
+        <input type="checkbox" :checked="!!isVertical"
+          @input="isVertical = ($event.target as any).checked ? '1' : ''" />
+        Vertical
       </label>
     </p>
     <p>
